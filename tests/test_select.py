@@ -7,7 +7,6 @@ from wasmtime import Engine, Instance, Module, Store
 
 from wriggle import current_time_utc, select, to_wasm
 
-
 VALID_LITERALS = [
     -9223372036854775808,
     0,
@@ -35,7 +34,10 @@ INVALID_SELECT_LITERALS = [
 
 INVALID_WASM_QUERIES = [
     ('SELECT 1.7976931348623159e308;', '1.7976931348623159e308 outside finite 64-bit float range'),
-    ('SELECT -1.7976931348623159e308;', '-1.7976931348623159e308 outside finite 64-bit float range'),
+    (
+        'SELECT -1.7976931348623159e308;',
+        '-1.7976931348623159e308 outside finite 64-bit float range',
+    ),
     (
         'SELECT 1.0000000000000001;',
         '1.0000000000000001 more precise than representable 64-bit float 1.0',
@@ -54,7 +56,7 @@ def run_scalar(query: str) -> int | float | str:
 
 
 @mark.parametrize('literal', VALID_LITERALS)
-def test_sql_scalar(literal: int | float | str) -> None:
+def test_sql_scalar(literal: float | str) -> None:
     assert select(literal) == 'SELECT %s' % (
         "'%s'" % literal.replace("'", "''") if isinstance(literal, str) else literal
     )
@@ -74,7 +76,7 @@ def test_sql_no_arguments() -> None:
 
 
 @mark.parametrize('literal', VALID_LITERALS)
-def test_wasm_scalar(literal: int | float | str) -> None:
+def test_wasm_scalar(literal: float | str) -> None:
     result = run_scalar(select(literal))
     if type(literal) is float and literal == 0.0 and copysign(1.0, literal) == -1.0:
         assert isinstance(result, float)
@@ -100,13 +102,13 @@ def test_wasm_select_list() -> None:
 
 
 @mark.parametrize(('literal', 'message'), INVALID_SELECT_LITERALS)
-def test_select_rejects_unsupported_literal(literal: int | float, message: str) -> None:
+def test_select_rejects_unsupported_literal(literal: float, message: str) -> None:
     with raises(OverflowError, match=message):
         select(literal)
 
 
 @mark.parametrize(('literal', 'message'), INVALID_SELECT_LITERALS)
-def test_to_wasm_select_rejects_unsupported_literal(literal: int | float, message: str) -> None:
+def test_to_wasm_select_rejects_unsupported_literal(literal: float, message: str) -> None:
     with raises(OverflowError, match=message):
         to_wasm(select(literal))
 
@@ -120,6 +122,9 @@ def test_to_wasm_rejects_unsupported_query_literal(query: str, message: str) -> 
 def test_to_wasm_rejects_current_time_utc() -> None:
     with raises(
         TypeError,
-        match=r"STRFTIME\('%Y-%m-%d %H:%M:%SZ', 'now'\) is not a supported constant SELECT expression",
+        match=(
+            r"STRFTIME\('%Y-%m-%d %H:%M:%SZ', 'now'\) "
+            r'is not a supported constant SELECT expression'
+        ),
     ):
         to_wasm(select(current_time_utc()))

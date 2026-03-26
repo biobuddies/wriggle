@@ -34,10 +34,9 @@ exp.Neg.__float__ = neg_float
 
 
 def current_time_utc() -> exp.Expression:
-    return exp.Anonymous(this='STRFTIME', expressions=[
-        exp.convert('%Y-%m-%d %H:%M:%SZ'),
-        exp.convert('now'),
-    ])
+    return exp.Anonymous(
+        this='STRFTIME', expressions=[exp.convert('%Y-%m-%d %H:%M:%SZ'), exp.convert('now')]
+    )
 
 
 def select_expression(expression: SelectExpression) -> exp.Expression:
@@ -100,7 +99,9 @@ def result_type_value(expression: exp.Expression) -> tuple[str, str] | None:
         return 'i64', f'i64.const {signed_i64(expression)}'
     if isinstance(expression, (exp.Literal, exp.Neg)):
         return 'f64', f'f64.const {finite_f64(expression)}'
-    raise TypeError(f'{expression.sql(dialect="sqlite")} is not a supported constant SELECT expression')
+    raise TypeError(
+        f'{expression.sql(dialect="sqlite")} is not a supported constant SELECT expression'
+    )
 
 
 def to_wasm(query: str) -> bytes:

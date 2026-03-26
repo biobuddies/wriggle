@@ -315,7 +315,7 @@ depends = [
     'uv-pip-compile',  # needs Internet
 ]
 
-[tasks.precommit]
+[tasks.pre-commit]
 depends = ['pre-commit-fast']
 
 [tools]

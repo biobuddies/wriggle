@@ -33,6 +33,7 @@ ignore = [
     'TD004',  # A colon takes up space without really improving readability
     'TRY002', # Forces premature specialization; the right time to subclass is when the exception starts being caught
     'TRY003', # Forces premature specialization; the right time to subclass is when the exception starts being caught
+    'UP031',  # Percent formatting can simplify quote-heavy strings
 ]
 select = ['ALL']
 
@@ -50,7 +51,9 @@ split-on-trailing-comma = false
     'PLR2004', # Tests can have magic values
     'PLR6301', # Test classes can ignore self
     'PT013',   # `import pytest` would be inconsistent with other imports
+    'S310',    # End-to-end tests can fetch from ephemeral local test servers
     'S101',    # Tests can have assertions
+    'S603',    # End-to-end tests can spawn local dev servers
 ]
 
 [lint.pydocstyle]
