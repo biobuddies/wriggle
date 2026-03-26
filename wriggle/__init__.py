@@ -34,7 +34,12 @@ exp.Neg.__float__ = neg_float
 def select(*expressions: int | float | str) -> str:
     if not expressions:
         raise TypeError('select() missing 1 required positional argument: expression')
-    return f"{exp.select(*(exp.convert(expression) for expression in expressions)).sql(dialect='sqlite')};"
+    for expression in expressions:
+        if type(expression) is int:
+            signed_i64(exp.convert(expression))
+        elif type(expression) is float:
+            finite_f64(exp.convert(expression))
+    return exp.select(*(exp.convert(expression) for expression in expressions)).sql(dialect='sqlite')
 
 
 def string_bytes(expression: exp.Expression) -> bytes | None:
@@ -70,7 +75,11 @@ def result_type_value(expression: exp.Expression) -> tuple[str, str] | None:
         return None
     if isinstance(expression, exp.Literal) and expression.is_int:
         return 'i64', f'i64.const {signed_i64(expression)}'
-    if isinstance(expression, exp.Neg) and isinstance(expression.this, exp.Literal) and expression.this.is_int:
+    if (
+        isinstance(expression, exp.Neg)
+        and isinstance(expression.this, exp.Literal)
+        and expression.this.is_int
+    ):
         return 'i64', f'i64.const {signed_i64(expression)}'
     return 'f64', f'f64.const {finite_f64(expression)}'
 

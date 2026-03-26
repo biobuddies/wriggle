@@ -1,4 +1,5 @@
 """Unit test Structured Query Language to WebAssembly integration."""
+
 from wasmtime import Engine, Instance, Module, Store
 
 from wriggle import select, to_wasm

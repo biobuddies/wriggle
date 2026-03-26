@@ -3,10 +3,7 @@ build-backend = 'setuptools.build_meta'
 requires = ['setuptools>=61.0', 'wheel']
 
 [project]
-dependencies = [
-    'sqlglot',
-    'wasmtime',
-]
+dependencies = ['sqlglot', 'wasmtime']
 name = 'wriggle'
 requires-python = '>=3.12'
 version = '0.0.0'
@@ -30,10 +27,7 @@ pre-commit = [
     'validate-pyproject',
     'yamllint',
 ]
-test = [
-    'pytest',
-    'pytest-cov',
-]
+test = ['pytest', 'pytest-cov']
 
 [tool.basedpyright]
 extends = '.biobuddies/basedpyright.toml'
