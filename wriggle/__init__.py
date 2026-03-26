@@ -28,15 +28,19 @@ def string_bytes(expression: exp.Expression) -> bytes | None:
     return None
 
 
+def signed_i64(expression: exp.Expression) -> int:
+    integer = int(expression)
+    minimum = -9223372036854775808  # signed 64-bit
+    maximum = 9223372036854775807  # signed 64-bit
+    if minimum <= integer <= maximum:
+        return integer
+    if integer < minimum:
+        raise OverflowError(f'{integer} below signed 64-bit minimum {minimum}')
+    raise OverflowError(f'{integer} above signed 64-bit maximum {maximum}')
+
+
 def to_wasm(query: str) -> bytes:
     expressions = parse_one(query, dialect='sqlite').expressions
-    if len(expressions) == 1 and (encoded := string_bytes(expressions[0])) is not None:
-        return wat2wasm(
-            '(module '
-            '(memory (export "memory") 1) '
-            f'(data (i32.const 0) "{"".join(f"\\{byte:02x}" for byte in encoded)}") '
-            f'(func (export "run") (result i64) i64.const {len(encoded)}))'
-        )
     data_offset = 0
     data_segments: list[str] = []
     result_types: list[str] = []
@@ -45,7 +49,7 @@ def to_wasm(query: str) -> bytes:
         encoded = string_bytes(expression)
         if encoded is None:
             result_types.append('i64')
-            result_values.append(f'i64.const {int(expression)}')
+            result_values.append(f'i64.const {signed_i64(expression)}')
             continue
         data_segments.append(
             f'(data (i32.const {data_offset}) "{"".join(f"\\{byte:02x}" for byte in encoded)}")'

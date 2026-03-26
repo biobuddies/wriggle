@@ -1,4 +1,4 @@
-"""SQL unit tests."""
+"""Unit test Structured Query Language generation."""
 
 from pytest import mark, raises
 
@@ -8,7 +8,7 @@ from wriggle import select
 @mark.parametrize(
     'integer',
     [
-        -9223372036854775807,  # 1 - 2**63
+        -9223372036854775808,  # -2**63
         0,
         1,
         9223372036854775807,  # 2**63 - 1
