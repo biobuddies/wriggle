@@ -1,5 +1,4 @@
 """End-to-end test local worker serving."""
-
 import json
 from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
@@ -27,9 +26,10 @@ def test_run_server_returns_select_one() -> None:
                 fail(process.stdout.read() if process.stdout else 'run-server exited early')
             try:
                 with urlopen(url, timeout=1) as response:
+                    assert response.headers['Content-Type'] == 'application/json'
                     assert json.load(response) == [[1]]
                     return
-            except URLError:
+            except (TimeoutError, URLError):
                 if monotonic() >= deadline:
                     fail(process.stdout.read() if process.stdout else 'run-server did not start')
                 sleep(0.1)

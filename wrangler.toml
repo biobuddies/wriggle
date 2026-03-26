@@ -1,5 +1,5 @@
 compatibility_date = '2026-03-26'
-main = 'worker/index.js'
+main = 'worker/index.ts'
 name = 'wiggle-local'
 
 [[d1_databases]]
