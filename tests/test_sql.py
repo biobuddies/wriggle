@@ -1,5 +1,7 @@
 """Unit test Structured Query Language generation."""
 
+from math import inf
+
 from pytest import mark, raises
 
 from wriggle import select
@@ -19,6 +21,33 @@ def test_select_integer(integer: int) -> None:
 
 
 @mark.parametrize(
+    'real',
+    [
+        -1.5,
+        0.0,
+        1.25,
+        5e-324,
+        1e3,
+        1.7976931348623157e308,
+    ],
+)
+def test_select_float(real: float) -> None:
+    assert select(real) == f'SELECT {real};'
+
+
+@mark.parametrize(
+    ('real', 'query'),
+    [
+        (-0.0, 'SELECT -0.0;'),
+        (inf, 'SELECT inf;'),
+        (-inf, 'SELECT -Infinity;'),
+    ],
+)
+def test_select_weird_float(real: float, query: str) -> None:
+    assert select(real) == query
+
+
+@mark.parametrize(
     'string',
     [
         '',
@@ -32,7 +61,7 @@ def test_select_string(string: str) -> None:
 
 
 def test_select_variadic_positional_arguments() -> None:
-    assert select(7, 'hi', -3) == "SELECT 7, 'hi', -3;"
+    assert select(7, 1.5, 'hi', -3) == "SELECT 7, 1.5, 'hi', -3;"
 
 
 def test_select_requires_expression() -> None:
