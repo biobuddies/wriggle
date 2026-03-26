@@ -1,11 +1,21 @@
 """WebAssembly unit tests."""
 
+from pytest import mark
 from wasmtime import Engine, Instance, Module, Store
 
 from wriggle import to_wasm
 
 
-def test_select_1() -> None:
+@mark.parametrize(
+    'integer',
+    [
+        -9223372036854775807,  # 1 - 2**63
+        0,
+        1,
+        9223372036854775807,  # 2**63 - 1
+    ],
+)
+def test_select_integer(integer: int) -> None:
     store = Store(Engine())
-    instance = Instance(store, Module(store.engine, to_wasm('SELECT 1;')), [])
-    assert instance.exports(store)['run'](store) == 1
+    instance = Instance(store, Module(store.engine, to_wasm(f'SELECT {integer};')), [])
+    assert instance.exports(store)['run'](store) == integer
