@@ -27,7 +27,7 @@ def test_run_server_returns_select_one() -> None:
                 fail(process.stdout.read() if process.stdout else 'run-server exited early')
             try:
                 with urlopen(url, timeout=1) as response:
-                    assert json.load(response) == {'value': 1}
+                    assert json.load(response) == [[1]]
                     return
             except URLError:
                 if monotonic() >= deadline:
