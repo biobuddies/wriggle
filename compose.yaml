@@ -1,0 +1,16 @@
+services:
+    postgres:
+        image: postgres:17
+        command:
+            - postgres
+            - --port=53427
+        environment:
+            POSTGRES_DB: wriggle
+            POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+            - '53427:53427'
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+volumes:
+    postgres_data:
