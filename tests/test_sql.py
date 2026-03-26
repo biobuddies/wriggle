@@ -18,6 +18,23 @@ def test_select_integer(integer: int) -> None:
     assert select(integer) == f'SELECT {integer};'
 
 
+@mark.parametrize(
+    'string',
+    [
+        '',
+        'hello',
+        "it's",
+        'μL',
+    ],
+)
+def test_select_string(string: str) -> None:
+    assert select(string) == "SELECT '%s';" % string.replace("'", "''")
+
+
+def test_select_variadic_positional_arguments() -> None:
+    assert select(7, 'hi', -3) == "SELECT 7, 'hi', -3;"
+
+
 def test_select_requires_expression() -> None:
-    with raises(TypeError, match='missing 1 required positional argument'):
+    with raises(TypeError, match='missing 1 required positional argument: expression'):
         select()  # type: ignore[call-arg]

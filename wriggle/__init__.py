@@ -16,10 +16,46 @@ exp.Literal.__int__ = literal_int
 exp.Neg.__int__ = neg_int
 
 
-def select(expression: int) -> str:
-    return f'SELECT {expression};'
+def select(*expressions: int | str) -> str:
+    if not expressions:
+        raise TypeError('select() missing 1 required positional argument: expression')
+    return f"{exp.select(*(exp.convert(expression) for expression in expressions)).sql(dialect='sqlite')};"
+
+
+def string_bytes(expression: exp.Expression) -> bytes | None:
+    if isinstance(expression, exp.Literal) and expression.args['is_string']:
+        return expression.this.encode()
+    return None
 
 
 def to_wasm(query: str) -> bytes:
-    [expression] = parse_one(query, dialect='sqlite').expressions
-    return wat2wasm(f'(module (func (export "run") (result i64) i64.const {int(expression)}))')
+    expressions = parse_one(query, dialect='sqlite').expressions
+    if len(expressions) == 1 and (encoded := string_bytes(expressions[0])) is not None:
+        return wat2wasm(
+            '(module '
+            '(memory (export "memory") 1) '
+            f'(data (i32.const 0) "{"".join(f"\\{byte:02x}" for byte in encoded)}") '
+            f'(func (export "run") (result i64) i64.const {len(encoded)}))'
+        )
+    data_offset = 0
+    data_segments: list[str] = []
+    result_types: list[str] = []
+    result_values: list[str] = []
+    for expression in expressions:
+        encoded = string_bytes(expression)
+        if encoded is None:
+            result_types.append('i64')
+            result_values.append(f'i64.const {int(expression)}')
+            continue
+        data_segments.append(
+            f'(data (i32.const {data_offset}) "{"".join(f"\\{byte:02x}" for byte in encoded)}")'
+        )
+        result_types.extend(['i64', 'i64'])
+        result_values.extend([f'i64.const {data_offset}', f'i64.const {len(encoded)}'])
+        data_offset += len(encoded)
+    memory = '(memory (export "memory") 1) ' if data_segments else ''
+    results = f'(result {" ".join(result_types)}) ' if result_types else ''
+    return wat2wasm(
+        f'(module {memory}{" ".join(data_segments)} '
+        f'(func (export "run") {results}{" ".join(result_values)}))'
+    )
