@@ -1,0 +1,8 @@
+compatibility_date = '2026-03-26'
+main = 'worker/index.js'
+name = 'wiggle-local'
+
+[[d1_databases]]
+binding = 'DB'
+database_id = '00000000-0000-0000-0000-000000000000'
+database_name = 'wriggle-local'

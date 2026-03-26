@@ -152,6 +152,9 @@ exit $return_code
 [tasks.prettier-write]
 run = 'mise run-on-sources prettier "*.{html,js,json,jsx,toml,ts,tsx,yaml}" --write "$@"'
 
+[tasks.run-server]
+run = 'wrangler dev "$@"'
+
 [tasks.ruff-check-fix]
 run = 'mise run-on-sources ruff "*.py{,i}" check --force-exclude --fix "$@"'
 

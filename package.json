@@ -4,6 +4,7 @@
         "prettier": "*",
         "prettier-plugin-jinja-template": "*",
         "prettier-plugin-organize-attributes": "*",
-        "prettier-plugin-toml": "*"
+        "prettier-plugin-toml": "*",
+        "wrangler": "^4.77.0"
     }
 }
