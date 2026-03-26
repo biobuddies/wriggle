@@ -3,6 +3,10 @@ build-backend = 'setuptools.build_meta'
 requires = ['setuptools>=61.0', 'wheel']
 
 [project]
+dependencies = [
+    'sqlglot',
+    'wasmtime',
+]
 name = 'wriggle'
 requires-python = '>=3.12'
 version = '0.0.0'
@@ -25,6 +29,10 @@ pre-commit = [
     'typos',
     'validate-pyproject',
     'yamllint',
+]
+test = [
+    'pytest',
+    'pytest-cov',
 ]
 
 [tool.basedpyright]
