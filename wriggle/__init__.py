@@ -4,6 +4,8 @@ from math import isfinite
 from sqlglot import exp, parse_one
 from wasmtime import wat2wasm
 
+type SelectExpression = int | float | str | exp.Expression
+
 
 def literal_int(self: exp.Literal) -> int:
     if self.args['is_string']:
@@ -31,15 +33,30 @@ exp.Literal.__float__ = literal_float
 exp.Neg.__float__ = neg_float
 
 
-def select(*expressions: int | float | str) -> str:
+def current_time_utc() -> exp.Expression:
+    return exp.Anonymous(this='STRFTIME', expressions=[
+        exp.convert('%Y-%m-%d %H:%M:%SZ'),
+        exp.convert('now'),
+    ])
+
+
+def select_expression(expression: SelectExpression) -> exp.Expression:
+    if isinstance(expression, exp.Expression):
+        return expression
+    converted = exp.convert(expression)
+    if type(expression) is int:
+        signed_i64(converted)
+    elif type(expression) is float:
+        finite_f64(converted)
+    return converted
+
+
+def select(*expressions: SelectExpression) -> str:
     if not expressions:
         raise TypeError('select() missing 1 required positional argument: expression')
-    for expression in expressions:
-        if type(expression) is int:
-            signed_i64(exp.convert(expression))
-        elif type(expression) is float:
-            finite_f64(exp.convert(expression))
-    return exp.select(*(exp.convert(expression) for expression in expressions)).sql(dialect='sqlite')
+    return exp.select(*(select_expression(expression) for expression in expressions)).sql(
+        dialect='sqlite'
+    )
 
 
 def string_bytes(expression: exp.Expression) -> bytes | None:
@@ -81,7 +98,9 @@ def result_type_value(expression: exp.Expression) -> tuple[str, str] | None:
         and expression.this.is_int
     ):
         return 'i64', f'i64.const {signed_i64(expression)}'
-    return 'f64', f'f64.const {finite_f64(expression)}'
+    if isinstance(expression, (exp.Literal, exp.Neg)):
+        return 'f64', f'f64.const {finite_f64(expression)}'
+    raise TypeError(f'{expression.sql(dialect="sqlite")} is not a supported constant SELECT expression')
 
 
 def to_wasm(query: str) -> bytes:

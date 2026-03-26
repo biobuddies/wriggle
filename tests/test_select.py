@@ -5,7 +5,7 @@ from math import copysign
 from pytest import mark, raises
 from wasmtime import Engine, Instance, Module, Store
 
-from wriggle import select, to_wasm
+from wriggle import current_time_utc, select, to_wasm
 
 
 VALID_LITERALS = [
@@ -64,6 +64,10 @@ def test_sql_variadic_positional_arguments() -> None:
     assert select(7, 1.5, 'hi', -3) == "SELECT 7, 1.5, 'hi', -3"
 
 
+def test_sql_current_time_utc() -> None:
+    assert select(current_time_utc()) == "SELECT STRFTIME('%Y-%m-%d %H:%M:%SZ', 'now')"
+
+
 def test_sql_no_arguments() -> None:
     with raises(TypeError, match='missing 1 required positional argument: expression'):
         select()  # type: ignore[call-arg]
@@ -111,3 +115,11 @@ def test_to_wasm_select_rejects_unsupported_literal(literal: int | float, messag
 def test_to_wasm_rejects_unsupported_query_literal(query: str, message: str) -> None:
     with raises(OverflowError, match=message):
         to_wasm(query)
+
+
+def test_to_wasm_rejects_current_time_utc() -> None:
+    with raises(
+        TypeError,
+        match=r"STRFTIME\('%Y-%m-%d %H:%M:%SZ', 'now'\) is not a supported constant SELECT expression",
+    ):
+        to_wasm(select(current_time_utc()))
