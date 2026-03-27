@@ -33,9 +33,17 @@ exp.Literal.__float__ = literal_float
 exp.Neg.__float__ = neg_float
 
 
-def current_time_utc() -> exp.Expression:
+def datez(when: str = 'now') -> exp.Expression:
+    return exp.Anonymous(this='STRFTIME', expressions=[exp.convert('%Y-%m-%d'), exp.convert(when)])
+
+
+def timez(when: str = 'now') -> exp.Expression:
+    return exp.Anonymous(this='STRFTIME', expressions=[exp.convert('%H:%M:%SZ'), exp.convert(when)])
+
+
+def datetimez(when: str = 'now') -> exp.Expression:
     return exp.Anonymous(
-        this='STRFTIME', expressions=[exp.convert('%Y-%m-%d %H:%M:%SZ'), exp.convert('now')]
+        this='STRFTIME', expressions=[exp.convert('%Y-%m-%dT%H:%M:%SZ'), exp.convert(when)]
     )
 
 

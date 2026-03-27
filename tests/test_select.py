@@ -5,7 +5,7 @@ from math import copysign
 from pytest import mark, raises
 from wasmtime import Engine, Instance, Module, Store
 
-from wriggle import current_time_utc, select, to_wasm
+from wriggle import datez, datetimez, select, timez, to_wasm
 
 VALID_LITERALS = [
     -9223372036854775808,
@@ -66,8 +66,28 @@ def test_sql_variadic_positional_arguments() -> None:
     assert select(7, 1.5, 'hi', -3) == "SELECT 7, 1.5, 'hi', -3"
 
 
-def test_sql_current_time_utc() -> None:
-    assert select(current_time_utc()) == "SELECT STRFTIME('%Y-%m-%d %H:%M:%SZ', 'now')"
+def test_sql_datez() -> None:
+    assert select(datez()) == "SELECT STRFTIME('%Y-%m-%d', 'now')"
+
+
+def test_sql_datez_when() -> None:
+    assert select(datez('2026-01-01')) == "SELECT STRFTIME('%Y-%m-%d', '2026-01-01')"
+
+
+def test_sql_timez() -> None:
+    assert select(timez()) == "SELECT STRFTIME('%H:%M:%SZ', 'now')"
+
+
+def test_sql_timez_when() -> None:
+    assert select(timez('2026-01-01')) == "SELECT STRFTIME('%H:%M:%SZ', '2026-01-01')"
+
+
+def test_sql_datetimez() -> None:
+    assert select(datetimez()) == "SELECT STRFTIME('%Y-%m-%dT%H:%M:%SZ', 'now')"
+
+
+def test_sql_datetimez_when() -> None:
+    assert select(datetimez('2026-01-01')) == "SELECT STRFTIME('%Y-%m-%dT%H:%M:%SZ', '2026-01-01')"
 
 
 def test_sql_no_arguments() -> None:
@@ -119,12 +139,12 @@ def test_to_wasm_rejects_unsupported_query_literal(query: str, message: str) -> 
         to_wasm(query)
 
 
-def test_to_wasm_rejects_current_time_utc() -> None:
+def test_to_wasm_rejects_datetimez() -> None:
     with raises(
         TypeError,
         match=(
-            r"STRFTIME\('%Y-%m-%d %H:%M:%SZ', 'now'\) "
+            r"STRFTIME\('%Y-%m-%dT%H:%M:%SZ', 'now'\) "
             r'is not a supported constant SELECT expression'
         ),
     ):
-        to_wasm(select(current_time_utc()))
+        to_wasm(select(datetimez()))
