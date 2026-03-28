@@ -1,3 +1,5 @@
+"""Build the static worker wasm fixture used by the local worker entrypoint."""
+
 from pathlib import Path
 from sys import path
 

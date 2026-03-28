@@ -1,3 +1,5 @@
+# pyright: reportAny=false, reportArgumentType=false, reportAttributeAccessIssue=false, reportImplicitStringConcatenation=false, reportPrivateImportUsage=false, reportReturnType=false, reportUnknownMemberType=false, reportUnknownVariableType=false
+
 from decimal import Decimal
 from math import isfinite
 
@@ -34,7 +36,7 @@ exp.Neg.__float__ = neg_float
 
 
 def datez(when: str = 'now') -> exp.Expression:
-    return exp.Anonymous(this='STRFTIME', expressions=[exp.convert('%Y-%m-%d'), exp.convert(when)])
+    return exp.Anonymous(this='STRFTIME', expressions=[exp.convert('%Y-%m-%dZ'), exp.convert(when)])
 
 
 def timez(when: str = 'now') -> exp.Expression:
@@ -43,7 +45,7 @@ def timez(when: str = 'now') -> exp.Expression:
 
 def datetimez(when: str = 'now') -> exp.Expression:
     return exp.Anonymous(
-        this='STRFTIME', expressions=[exp.convert('%Y-%m-%dT%H:%M:%SZ'), exp.convert(when)]
+        this='STRFTIME', expressions=[exp.convert('%Y-%m-%d %H:%M:%SZ'), exp.convert(when)]
     )
 
 
@@ -66,10 +68,8 @@ def select(*expressions: SelectExpression) -> str:
     )
 
 
-def string_bytes(expression: exp.Expression) -> bytes | None:
-    if isinstance(expression, exp.Literal) and expression.args['is_string']:
-        return expression.this.encode()
-    return None
+def result_bytes(expression: exp.Expression) -> bytes:
+    return expression.sql(dialect='sqlite').encode()
 
 
 def signed_i64(expression: exp.Expression) -> int:
@@ -93,39 +93,50 @@ def finite_f64(expression: exp.Expression) -> float:
     raise OverflowError(f'{text} outside finite 64-bit float range')
 
 
-def result_type_value(expression: exp.Expression) -> tuple[str, str] | None:
-    encoded = string_bytes(expression)
-    if encoded is not None:
-        return None
-    if isinstance(expression, exp.Literal) and expression.is_int:
-        return 'i64', f'i64.const {signed_i64(expression)}'
+def validate_expression(expression: exp.Expression, query: str) -> None:
+    if isinstance(expression, exp.Literal):
+        if not expression.args['is_string']:
+            signed_i64(expression) if expression.is_int else finite_f64(expression)
+        return
     if (
         isinstance(expression, exp.Neg)
         and isinstance(expression.this, exp.Literal)
-        and expression.this.is_int
+        and not expression.this.args['is_string']
     ):
-        return 'i64', f'i64.const {signed_i64(expression)}'
-    if isinstance(expression, (exp.Literal, exp.Neg)):
-        return 'f64', f'f64.const {finite_f64(expression)}'
-    raise TypeError(
-        f'{expression.sql(dialect="sqlite")} is not a supported constant SELECT expression'
-    )
+        signed_i64(expression) if expression.this.is_int else finite_f64(expression)
+        return
+    if (
+        isinstance(expression, exp.TimeToStr)
+        and isinstance(expression.args.get('format'), exp.Literal)
+        and expression.args['format'].args['is_string']
+        and isinstance(expression.this, exp.TsOrDsToTimestamp)
+        and isinstance(expression.this.this, exp.Literal)
+        and expression.this.this.args['is_string']
+    ):
+        return
+    raise ValueError(f'potential overwrite forbidden: {query}')
+
+
+def validate_select(select: exp.Select, query: str) -> None:
+    if select.args.get('locks'):
+        raise ValueError(f'potential overwrite forbidden: {query}')
 
 
 def to_wasm(query: str) -> bytes:
-    expressions = parse_one(query, dialect='sqlite').expressions
+    parsed = parse_one(query, dialect='sqlite')
+    if not isinstance(parsed, exp.Select):
+        raise ValueError(  # noqa: TRY004
+            f'potential overwrite forbidden: {parsed.sql(dialect="sqlite")}'
+        )
+    validate_select(parsed, query)
+    expressions = parsed.expressions
     data_offset = 0
     data_segments: list[str] = []
     result_types: list[str] = []
     result_values: list[str] = []
     for expression in expressions:
-        typed_value = result_type_value(expression)
-        if typed_value is not None:
-            result_type, result_value = typed_value
-            result_types.append(result_type)
-            result_values.append(result_value)
-            continue
-        encoded = string_bytes(expression)
+        validate_expression(expression, query)
+        encoded = result_bytes(expression)
         data_segments.append(
             f'(data (i32.const {data_offset}) "{"".join(f"\\{byte:02x}" for byte in encoded)}")'
         )
