@@ -126,7 +126,7 @@ def to_wasm(query: str) -> bytes:
     parsed = parse_one(query, dialect='sqlite')
     if not isinstance(parsed, exp.Select):
         raise ValueError(  # noqa: TRY004
-            f'potential overwrite forbidden: {parsed.sql(dialect="sqlite")}'
+            f'potential overwrite forbidden: {query}'
         )
     validate_select(parsed, query)
     expressions = parsed.expressions
