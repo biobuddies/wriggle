@@ -54,10 +54,10 @@ def select_expression(expression: SelectExpression) -> exp.Expression:
         return expression
     converted = exp.convert(expression)
     if type(expression) is int:
-        signed_i64(converted)
+        signed_i64(converted)  # pyrefly: ignore[bad-argument-type]
     elif type(expression) is float:
-        finite_f64(converted)
-    return converted
+        finite_f64(converted)  # pyrefly: ignore[bad-argument-type]
+    return converted  # pyrefly: ignore[bad-return]
 
 
 def select(*expressions: SelectExpression) -> str:
@@ -73,7 +73,7 @@ def result_bytes(expression: exp.Expression) -> bytes:
 
 
 def signed_i64(expression: exp.Expression) -> int:
-    integer = int(expression)
+    integer = int(expression)  # pyrefly: ignore[bad-argument-type]
     minimum = -9223372036854775808  # signed 64-bit
     maximum = 9223372036854775807  # signed 64-bit
     if minimum <= integer <= maximum:
@@ -85,7 +85,7 @@ def signed_i64(expression: exp.Expression) -> int:
 
 def finite_f64(expression: exp.Expression) -> float:
     text = expression.sql(dialect='sqlite')
-    real = float(expression)
+    real = float(expression)  # pyrefly: ignore[bad-argument-type]
     if isfinite(real):
         if Decimal(text) == Decimal(str(real)):
             return real
@@ -122,7 +122,7 @@ def validate_select(select: exp.Select, query: str) -> None:
         raise ValueError(f'potential overwrite forbidden: {query}')
 
 
-def to_wasm(query: str) -> bytes:
+def to_wasm(query: str) -> bytearray:
     parsed = parse_one(query, dialect='sqlite')
     if not isinstance(parsed, exp.Select):
         raise ValueError(  # noqa: TRY004
