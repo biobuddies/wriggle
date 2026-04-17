@@ -26,7 +26,7 @@ def test_run_server_returns_select_one() -> None:
             if process.poll() is not None:
                 fail(process.stdout.read() if process.stdout else 'run-server exited early')
             try:
-                with urlopen(url, timeout=1) as response:
+                with urlopen(url, timeout=1) as response:  # noqa: S310
                     assert response.headers['Content-Type'] == 'application/json'
                     assert json.load(response) == [[1]]
                     return

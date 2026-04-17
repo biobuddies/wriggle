@@ -1,2 +1,8 @@
 default_context:
-    languages: Node,Python
+  languages: Node,Python
+  node_dependencies: {}
+  node_dev_dependencies:
+    wrangler: ^4.77.0
+  python_dependencies:
+    - sqlglot
+    - wasmtime

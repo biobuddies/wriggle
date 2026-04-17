@@ -10,8 +10,8 @@ path.insert(0, str(Path(__file__).resolve().parents[1]))
 from wriggle import select
 
 
-def encoded(data: bytes) -> str:
-    return ''.join(f'\\{byte:02x}' for byte in data)
+def encoded(data: bytes | bytearray | memoryview) -> str:
+    return '\\' + data.hex('\\', 1) if data else ''
 
 
 query = select(1).encode()
