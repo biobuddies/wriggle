@@ -11,10 +11,14 @@ from wriggle import select, to_wasm
 
 def test_select_integration() -> None:
     store = Store(Engine())
-    instance = Instance(store, Module(store.engine, to_wasm(select(7, 1.5, 'hi', -3))), [])
-    offsets_lengths = instance.exports(store)['run'](store)
+    instance = Instance(
+        store,
+        Module(store.engine, to_wasm(select(7, 1.5, 'hi', -3))),  # pyrefly: ignore[bad-argument-type]
+        [],
+    )
+    offsets_lengths = instance.exports(store)['run'](store)  # pyrefly: ignore[not-callable]
     expressions = [
-        instance.exports(store)['memory'].read(store, offset, offset + length).decode()
+        instance.exports(store)['memory'].read(store, offset, offset + length).decode()  # pyrefly: ignore[missing-attribute]
         for offset, length in zip(offsets_lengths[::2], offsets_lengths[1::2], strict=True)
     ]
     assert connect(':memory:').execute('SELECT ' + ', '.join(expressions)).fetchone() == (

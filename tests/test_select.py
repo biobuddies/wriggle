@@ -54,12 +54,16 @@ INVALID_WASM_QUERIES = [
 
 def run_expressions(query: str) -> list[str]:
     store = Store(Engine())
-    instance = Instance(store, Module(store.engine, to_wasm(query)), [])
-    result = instance.exports(store)['run'](store)
+    instance = Instance(
+        store,
+        Module(store.engine, to_wasm(query)),  # pyrefly: ignore[bad-argument-type]
+        [],
+    )
+    result = instance.exports(store)['run'](store)  # pyrefly: ignore[not-callable]
     offsets_lengths = result if isinstance(result, (tuple, list)) else [result]
     memory = instance.exports(store)['memory']
     return [
-        memory.read(store, offset, offset + length).decode()
+        memory.read(store, offset, offset + length).decode()  # pyrefly: ignore[missing-attribute]
         for offset, length in zip(offsets_lengths[::2], offsets_lengths[1::2], strict=True)
     ]
 
